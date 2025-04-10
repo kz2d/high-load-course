@@ -13,6 +13,7 @@ import ru.quipy.payments.api.PaymentAggregate
 import java.net.SocketTimeoutException
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
@@ -38,6 +39,7 @@ class PaymentExternalSystemAdapterImpl(
     private val slidingWindowRateLimiter = SlidingWindowRateLimiter(rateLimitPerSec.toLong(), Duration.ofSeconds(1))
 
     private val client = OkHttpClient.Builder().callTimeout(2000, TimeUnit.MILLISECONDS).build()
+private val pool = Executors.newFixedThreadPool(parallelRequests)
 
     override fun performPaymentAsync(paymentId: UUID, amount: Int, paymentStartedAt: Long, deadline: Long) {
         logger.warn("[$accountName] Submitting payment request for payment $paymentId")
@@ -47,7 +49,9 @@ class PaymentExternalSystemAdapterImpl(
 
 
         val start_time = now()
-
+        pool.submit() {makePayment(paymentId,amount,paymentStartedAt, deadline,transactionId)}
+    }
+        fun makePayment(paymentId: UUID, amount: Int, paymentStartedAt: Long, deadline: Long, transactionId: UUID){
         // Вне зависимости от исхода оплаты важно отметить что она была отправлена.
         // Это требуется сделать ВО ВСЕХ СЛУЧАЯХ, поскольку эта информация используется сервисом тестирования.
         paymentESService.update(paymentId) {
