@@ -14,7 +14,7 @@ class OngoingWindow(
     }
 
     fun tryAcquire(miliseconds_timeout: Long): Boolean {
-        return window.tryAcquire(1, miliseconds_timeout, TimeUnit.MILLISECONDS)
+        return window.tryAcquire( miliseconds_timeout, TimeUnit.MILLISECONDS)
     }
 
     fun release() = window.release()
