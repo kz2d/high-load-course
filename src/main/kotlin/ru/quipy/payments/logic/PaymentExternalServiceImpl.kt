@@ -57,7 +57,10 @@ class PaymentExternalSystemAdapterImpl(
         val request = Request.Builder().run {
             url("http://localhost:1234/external/process?serviceName=${serviceName}&accountName=${accountName}&transactionId=$transactionId&paymentId=$paymentId&amount=$amount")
             post(emptyBody)
-        }.build()
+        }
+            .header("Keep-Alive",    "timeout=1.1, max=1.1")
+            .header("Connection",    "keep-alive")
+            .build()
 
         var wait_time: Long = 150
         var retries = 3
