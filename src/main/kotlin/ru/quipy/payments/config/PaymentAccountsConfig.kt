@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer
-import org.apache.coyote.http2.Http2Protocol
+//import org.apache.coyote.http2.Http2Protocol
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.embedded.jetty.JettyServerCustomizer
@@ -54,15 +55,26 @@ class PaymentAccountsConfig {
             .map { PaymentExternalSystemAdapterImpl(it, paymentService) }
     }
 
+//    @Bean
+//    fun tomcatConnectorCustomizer(): TomcatConnectorCustomizer {
+//        return TomcatConnectorCustomizer {
+//            try {
+//                (it.protocolHandler.findUpgradeProtocols().get(0) as Http2Protocol)
+//                    .maxConcurrentStreams = 10_000_000
+//            } catch (e: Exception) {
+//                logger.error("!!! Failed to increase number of http2 streams per connection !!!")
+//            }
+//        }
+//    }
+
     @Bean
-    fun tomcatConnectorCustomizer(): TomcatConnectorCustomizer {
-        return TomcatConnectorCustomizer {
-            try {
-                (it.protocolHandler.findUpgradeProtocols().get(0) as Http2Protocol)
-                    .maxConcurrentStreams = 10_000_000
-            } catch (e: Exception) {
-                logger.error("!!! Failed to increase number of http2 streams per connection !!!")
-            }
-        }
+    fun jettyServerCustomizer(): JettyServletWebServerFactory {
+
+            val jetty = JettyServletWebServerFactory()
+
+            val c = JettyServerCustomizer { (it.connectors[0].getConnectionFactory("h2c") as HTTP2CServerConnectionFactory).maxConcurrentStreams = 1_000_000 }
+
+            jetty.serverCustomizers.add(c)
+        return jetty
     }
 }
